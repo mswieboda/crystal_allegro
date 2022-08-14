@@ -5,6 +5,7 @@
   "allegro5/allegro_color.h",
   "allegro5/allegro_image.h",
   "allegro5/allegro_font.h",
+  "allegro5/allegro_ttf.h",
   "allegro5/allegro_native_dialog.h",
   "allegro5/allegro_primitives.h",
 
@@ -16,6 +17,7 @@
 @[Link("allegro_color")]
 @[Link("allegro_dialog")]
 @[Link("allegro_font")]
+@[Link("allegro_ttf")]
 @[Link("allegro_image")]
 @[Link("allegro_primitives")]
 {% if flag?(:darwin) %}

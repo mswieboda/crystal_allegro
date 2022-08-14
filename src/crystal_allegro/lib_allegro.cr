@@ -4,6 +4,7 @@
 @[Link("allegro_color")]
 @[Link("allegro_dialog")]
 @[Link("allegro_font")]
+@[Link("allegro_ttf")]
 @[Link("allegro_image")]
 @[Link("allegro_primitives")]
 {% if flag?(:darwin) %}
@@ -13,39 +14,39 @@
   @[Link(ldflags: "`llvm-config-3.6 --ldflags 2>/dev/null || llvm-config-3.5 --ldflags 2>/dev/null || llvm-config --ldflags 2>/dev/null`")]
 {% end %}
 lib LibAllegro
-  VERSION                     =                      5
-  SUB_VERSION                 =                      2
-  WIP_VERSION                 =                      4
-  UNSTABLE_BIT                =                      0
-  RELEASE_NUMBER              =                      1
-  DATE                        =               20180224
-  PI                          = 3.14159265358979323846
-  NEW_WINDOW_TITLE_MAX_SIZE   =                    255
-  MOUSE_MAX_EXTRA_AXES        =                      4
-  TOUCH_INPUT_MAX_TOUCH_COUNT =                     16
-  MAX_CHANNELS                =                      8
-  VERTEX_CACHE_SIZE           =                    256
-  PRIM_QUALITY                =                     10
+  VERSION = 5
+  SUB_VERSION = 2
+  WIP_VERSION = 8
+  UNSTABLE_BIT = 0
+  RELEASE_NUMBER = 1
+  DATE = 20220605
+  PI = 3.14159265358979323846
+  NEW_WINDOW_TITLE_MAX_SIZE = 255
+  MOUSE_MAX_EXTRA_AXES = 4
+  TOUCH_INPUT_MAX_TOUCH_COUNT = 16
+  MAX_CHANNELS = 8
+  TTF_NO_KERNING = 1
+  TTF_MONOCHROME = 2
+  TTF_NO_AUTOHINT = 4
+  VERTEX_CACHE_SIZE = 256
+  PRIM_QUALITY = 10
   fun get_allegro_version = al_get_allegro_version : Uint32T
   alias Uint32T = LibC::UInt
   fun run_main = al_run_main(argc : LibC::Int, argv : LibC::Char**, x2 : (LibC::Int, LibC::Char** -> LibC::Int)) : LibC::Int
-
   struct Timeout
-    __pad1__ : LibC::Int
-    __pad2__ : LibC::Int
+    __pad1__ : Uint64T
+    __pad2__ : Uint64T
   end
-
+  alias Uint64T = LibC::ULongLong
   fun get_time = al_get_time : LibC::Double
   fun rest = al_rest(seconds : LibC::Double)
   fun init_timeout = al_init_timeout(timeout : Timeout*, seconds : LibC::Double)
-
   struct Color
     r : LibC::Float
     g : LibC::Float
     b : LibC::Float
     a : LibC::Float
   end
-
   fun map_rgb = al_map_rgb(r : UInt8, g : UInt8, b : UInt8) : Color
   fun map_rgba = al_map_rgba(r : UInt8, g : UInt8, b : UInt8, a : UInt8) : Color
   fun map_rgb_f = al_map_rgb_f(r : LibC::Float, g : LibC::Float, b : LibC::Float) : Color
@@ -61,18 +62,18 @@ lib LibAllegro
   fun get_pixel_block_size = al_get_pixel_block_size(format : LibC::Int) : LibC::Int
   fun get_pixel_block_width = al_get_pixel_block_width(format : LibC::Int) : LibC::Int
   fun get_pixel_block_height = al_get_pixel_block_height(format : LibC::Int) : LibC::Int
-  MemoryBitmap           =    1_i64
-  X_KeepBitmapFormat     =    2_i64
-  ForceLocking           =    4_i64
-  NoPreserveTexture      =    8_i64
-  X_AlphaTest            =   16_i64
-  X_InternalOpengl       =   32_i64
-  MinLinear              =   64_i64
-  MagLinear              =  128_i64
-  Mipmap                 =  256_i64
-  X_NoPremultipliedAlpha =  512_i64
-  VideoBitmap            = 1024_i64
-  ConvertBitmap          = 4096_i64
+  MemoryBitmap = 1_i64
+  X_KeepBitmapFormat = 2_i64
+  ForceLocking = 4_i64
+  NoPreserveTexture = 8_i64
+  X_AlphaTest = 16_i64
+  X_InternalOpengl = 32_i64
+  MinLinear = 64_i64
+  MagLinear = 128_i64
+  Mipmap = 256_i64
+  X_NoPremultipliedAlpha = 512_i64
+  VideoBitmap = 1024_i64
+  ConvertBitmap = 4096_i64
   fun set_new_bitmap_format = al_set_new_bitmap_format(format : LibC::Int)
   fun set_new_bitmap_flags = al_set_new_bitmap_flags(flags : LibC::Int)
   fun get_new_bitmap_format = al_get_new_bitmap_format : LibC::Int
@@ -114,13 +115,11 @@ lib LibAllegro
   fun draw_tinted_rotated_bitmap = al_draw_tinted_rotated_bitmap(bitmap : Bitmap, tint : Color, cx : LibC::Float, cy : LibC::Float, dx : LibC::Float, dy : LibC::Float, angle : LibC::Float, flags : LibC::Int)
   fun draw_tinted_scaled_rotated_bitmap = al_draw_tinted_scaled_rotated_bitmap(bitmap : Bitmap, tint : Color, cx : LibC::Float, cy : LibC::Float, dx : LibC::Float, dy : LibC::Float, xscale : LibC::Float, yscale : LibC::Float, angle : LibC::Float, flags : LibC::Int)
   fun draw_tinted_scaled_rotated_bitmap_region = al_draw_tinted_scaled_rotated_bitmap_region(bitmap : Bitmap, sx : LibC::Float, sy : LibC::Float, sw : LibC::Float, sh : LibC::Float, tint : Color, cx : LibC::Float, cy : LibC::Float, dx : LibC::Float, dy : LibC::Float, xscale : LibC::Float, yscale : LibC::Float, angle : LibC::Float, flags : LibC::Int)
-
   struct X_Tagbstring
     mlen : LibC::Int
     slen : LibC::Int
     data : UInt8*
   end
-
   fun ustr_new = al_ustr_new(s : LibC::Char*) : Ustr*
   type Ustr = X_Tagbstring
   fun ustr_new_from_buffer = al_ustr_new_from_buffer(s : LibC::Char*, size : LibC::SizeT) : Ustr*
@@ -186,11 +185,12 @@ lib LibAllegro
   fun ustr_has_suffix_cstr = al_ustr_has_suffix_cstr(us1 : Ustr*, s : LibC::Char*) : LibC::Bool
   fun utf8_width = al_utf8_width(c : Int32T) : LibC::SizeT
   fun utf8_encode = al_utf8_encode(s : LibC::Char*, c : Int32T) : LibC::SizeT
-  fun ustr_new_from_utf16 = al_ustr_new_from_utf16(x0 : LibC::Int) : Ustr*
+  fun ustr_new_from_utf16 = al_ustr_new_from_utf16(s : Uint16T*) : Ustr*
+  alias Uint16T = LibC::UShort
   fun ustr_size_utf16 = al_ustr_size_utf16(us : Ustr*) : LibC::SizeT
-  fun ustr_encode_utf16 = al_ustr_encode_utf16(us : Ustr*, s : LibC::Int*, n : LibC::SizeT) : LibC::SizeT
+  fun ustr_encode_utf16 = al_ustr_encode_utf16(us : Ustr*, s : Uint16T*, n : LibC::SizeT) : LibC::SizeT
   fun utf16_width = al_utf16_width(c : LibC::Int) : LibC::SizeT
-  fun utf16_encode = al_utf16_encode(s : LibC::Int*, c : Int32T) : LibC::SizeT
+  fun utf16_encode = al_utf16_encode(s : Uint16T*, c : Int32T) : LibC::SizeT
   fun create_path = al_create_path(str : LibC::Char*) : Path
   type Path = Void*
   fun create_path_for_directory = al_create_path_for_directory(str : LibC::Char*) : Path
@@ -216,7 +216,6 @@ lib LibAllegro
   fun set_path_extension = al_set_path_extension(path : Path, extension : LibC::Char*) : LibC::Bool
   fun get_path_basename = al_get_path_basename(path : Path) : LibC::Char*
   fun make_path_canonical = al_make_path_canonical(path : Path) : LibC::Bool
-
   struct FileInterface
     fi_fopen : (LibC::Char*, LibC::Char* -> Void*)
     fi_fclose : (File -> LibC::Bool)
@@ -232,7 +231,6 @@ lib LibAllegro
     fi_fungetc : (File, LibC::Int -> LibC::Int)
     fi_fsize : (File -> OffT)
   end
-
   type File = Void*
   alias Int64T = LibC::LongLong
   alias X__Int64T = LibC::LongLong
@@ -276,9 +274,9 @@ lib LibAllegro
   fun set_new_file_interface = al_set_new_file_interface(file_interface : FileInterface*)
   fun set_standard_file_interface = al_set_standard_file_interface
   fun get_file_userdata = al_get_file_userdata(f : File) : Void*
-  KeepBitmapFormat     =    2_i64
-  NoPremultipliedAlpha =  512_i64
-  KeepIndex            = 2048_i64
+  KeepBitmapFormat = 2_i64
+  NoPremultipliedAlpha = 512_i64
+  KeepIndex = 2048_i64
   fun register_bitmap_loader = al_register_bitmap_loader(ext : LibC::Char*, loader : IioLoaderFunction) : LibC::Bool
   alias IioLoaderFunction = (LibC::Char*, LibC::Int -> Bitmap)
   fun register_bitmap_saver = al_register_bitmap_saver(ext : LibC::Char*, saver : IioSaverFunction) : LibC::Bool
@@ -300,14 +298,12 @@ lib LibAllegro
   LockReadwrite = 0_i64
   LockReadonly = 1_i64
   LockWriteonly = 2_i64
-
   struct LockedRegion
     data : Void*
     format : LibC::Int
     pitch : LibC::Int
     pixel_size : LibC::Int
   end
-
   fun lock_bitmap = al_lock_bitmap(bitmap : Bitmap, format : LibC::Int, flags : LibC::Int) : LockedRegion*
   fun lock_bitmap_region = al_lock_bitmap_region(bitmap : Bitmap, x : LibC::Int, y : LibC::Int, width : LibC::Int, height : LibC::Int, format : LibC::Int, flags : LibC::Int) : LockedRegion*
   fun lock_bitmap_blocked = al_lock_bitmap_blocked(bitmap : Bitmap, flags : LibC::Int) : LockedRegion*
@@ -320,49 +316,45 @@ lib LibAllegro
   fun get_blend_color = al_get_blend_color : Color
   fun set_separate_blender = al_set_separate_blender(op : LibC::Int, source : LibC::Int, dest : LibC::Int, alpha_op : LibC::Int, alpha_source : LibC::Int, alpha_dest : LibC::Int)
   fun get_separate_blender = al_get_separate_blender(op : LibC::Int*, source : LibC::Int*, dest : LibC::Int*, alpha_op : LibC::Int*, alpha_src : LibC::Int*, alpha_dest : LibC::Int*)
-  EventJoystickAxis          =  1_i64
-  EventJoystickButtonDown    =  2_i64
-  EventJoystickButtonUp      =  3_i64
-  EventJoystickConfiguration =  4_i64
-  EventKeyDown               = 10_i64
-  EventKeyChar               = 11_i64
-  EventKeyUp                 = 12_i64
-  EventMouseAxes             = 20_i64
-  EventMouseButtonDown       = 21_i64
-  EventMouseButtonUp         = 22_i64
-  EventMouseEnterDisplay     = 23_i64
-  EventMouseLeaveDisplay     = 24_i64
-  EventMouseWarped           = 25_i64
-  EventTimer                 = 30_i64
-  EventDisplayExpose         = 40_i64
-  EventDisplayResize         = 41_i64
-  EventDisplayClose          = 42_i64
-  EventDisplayLost           = 43_i64
-  EventDisplayFound          = 44_i64
-  EventDisplaySwitchIn       = 45_i64
-  EventDisplaySwitchOut      = 46_i64
-  EventDisplayOrientation    = 47_i64
-  EventDisplayHaltDrawing    = 48_i64
-  EventDisplayResumeDrawing  = 49_i64
-  EventTouchBegin            = 50_i64
-  EventTouchEnd              = 51_i64
-  EventTouchMove             = 52_i64
-  EventTouchCancel           = 53_i64
-  EventDisplayConnected      = 60_i64
-  EventDisplayDisconnected   = 61_i64
-
+  EventJoystickAxis = 1_i64
+  EventJoystickButtonDown = 2_i64
+  EventJoystickButtonUp = 3_i64
+  EventJoystickConfiguration = 4_i64
+  EventKeyDown = 10_i64
+  EventKeyChar = 11_i64
+  EventKeyUp = 12_i64
+  EventMouseAxes = 20_i64
+  EventMouseButtonDown = 21_i64
+  EventMouseButtonUp = 22_i64
+  EventMouseEnterDisplay = 23_i64
+  EventMouseLeaveDisplay = 24_i64
+  EventMouseWarped = 25_i64
+  EventTimer = 30_i64
+  EventDisplayExpose = 40_i64
+  EventDisplayResize = 41_i64
+  EventDisplayClose = 42_i64
+  EventDisplayLost = 43_i64
+  EventDisplayFound = 44_i64
+  EventDisplaySwitchIn = 45_i64
+  EventDisplaySwitchOut = 46_i64
+  EventDisplayOrientation = 47_i64
+  EventDisplayHaltDrawing = 48_i64
+  EventDisplayResumeDrawing = 49_i64
+  EventTouchBegin = 50_i64
+  EventTouchEnd = 51_i64
+  EventTouchMove = 52_i64
+  EventTouchCancel = 53_i64
+  EventDisplayConnected = 60_i64
+  EventDisplayDisconnected = 61_i64
   struct EventSource
     __pad : LibC::Int[32]
   end
-
   struct AnyEvent
     type : EventType
     source : EventSource*
     timestamp : LibC::Double
   end
-
   alias EventType = LibC::UInt
-
   struct DisplayEvent
     type : EventType
     source : Void*
@@ -373,7 +365,6 @@ lib LibAllegro
     height : LibC::Int
     orientation : LibC::Int
   end
-
   struct JoystickEvent
     type : EventType
     source : Void*
@@ -384,7 +375,6 @@ lib LibAllegro
     pos : LibC::Float
     button : LibC::Int
   end
-
   struct KeyboardEvent
     type : EventType
     source : Void*
@@ -395,7 +385,6 @@ lib LibAllegro
     modifiers : LibC::UInt
     repeat : LibC::Bool
   end
-
   struct MouseEvent
     type : EventType
     source : Void*
@@ -412,7 +401,6 @@ lib LibAllegro
     button : LibC::UInt
     pressure : LibC::Float
   end
-
   struct TimerEvent
     type : EventType
     source : Void*
@@ -420,7 +408,6 @@ lib LibAllegro
     count : Int64T
     error : LibC::Double
   end
-
   struct TouchEvent
     type : EventType
     source : Void*
@@ -433,7 +420,6 @@ lib LibAllegro
     dy : LibC::Float
     primary : LibC::Bool
   end
-
   struct UserEvent
     type : EventType
     source : EventSource*
@@ -444,10 +430,8 @@ lib LibAllegro
     data3 : IntptrT
     data4 : IntptrT
   end
-
   alias X__DarwinIntptrT = LibC::Long
   alias IntptrT = X__DarwinIntptrT
-
   union Event
     type : EventType
     any : AnyEvent
@@ -459,7 +443,6 @@ lib LibAllegro
     touch : TouchEvent
     user : UserEvent
   end
-
   fun init_user_event_source = al_init_user_event_source(x0 : EventSource*)
   fun destroy_user_event_source = al_destroy_user_event_source(x0 : EventSource*)
   fun emit_user_event = al_emit_user_event(x0 : EventSource*, x1 : Event*, dtor : (UserEvent* -> Void)) : LibC::Bool
@@ -482,26 +465,26 @@ lib LibAllegro
   fun wait_for_event = al_wait_for_event(x0 : EventQueue, ret_event : Event*)
   fun wait_for_event_timed = al_wait_for_event_timed(x0 : EventQueue, ret_event : Event*, secs : LibC::Float) : LibC::Bool
   fun wait_for_event_until = al_wait_for_event_until(queue : EventQueue, ret_event : Event*, timeout : Timeout*) : LibC::Bool
-  Windowed                =     1_i64
-  Fullscreen              =     2_i64
-  Opengl                  =     4_i64
-  Direct3DInternal        =     8_i64
-  Resizable               =    16_i64
-  Frameless               =    32_i64
-  Noframe                 =    32_i64
-  GenerateExposeEvents    =    64_i64
-  Opengl30                =   128_i64
-  OpenglForwardCompatible =   256_i64
-  FullscreenWindow        =   512_i64
-  Minimized               =  1024_i64
-  ProgrammablePipeline    =  2048_i64
-  GtkToplevelInternal     =  4096_i64
-  Maximized               =  8192_i64
-  OpenglEsProfile         = 16384_i64
-  Dontcare                =     0_i64
-  Require                 =     1_i64
-  Suggest                 =     2_i64
-  X_PrimMaxUserAttr       =    10_i64
+  Windowed = 1_i64
+  Fullscreen = 2_i64
+  Opengl = 4_i64
+  Direct3DInternal = 8_i64
+  Resizable = 16_i64
+  Frameless = 32_i64
+  Noframe = 32_i64
+  GenerateExposeEvents = 64_i64
+  Opengl30 = 128_i64
+  OpenglForwardCompatible = 256_i64
+  FullscreenWindow = 512_i64
+  Minimized = 1024_i64
+  ProgrammablePipeline = 2048_i64
+  GtkToplevelInternal = 4096_i64
+  Maximized = 8192_i64
+  OpenglEsProfile = 16384_i64
+  Dontcare = 0_i64
+  Require = 1_i64
+  Suggest = 2_i64
+  X_PrimMaxUserAttr = 10_i64
   fun set_new_display_refresh_rate = al_set_new_display_refresh_rate(refresh_rate : LibC::Int)
   fun set_new_display_flags = al_set_new_display_flags(flags : LibC::Int)
   fun get_new_display_refresh_rate = al_get_new_display_refresh_rate : LibC::Int
@@ -620,11 +603,9 @@ lib LibAllegro
   fun fixacos = al_fixacos(x : Fixed) : Fixed
   fun fixasin = al_fixasin(x : Fixed) : Fixed
   fun fixasin = al_fixasin(x : Fixed) : Fixed
-
   struct FsEntry
     vtable : FsInterface*
   end
-
   struct FsInterface
     fs_create_entry : (LibC::Char* -> FsEntry*)
     fs_destroy_entry : (FsEntry* -> Void)
@@ -642,12 +623,11 @@ lib LibAllegro
     fs_close_directory : (FsEntry* -> LibC::Bool)
     fs_filename_exists : (LibC::Char* -> LibC::Bool)
     fs_remove_filename : (LibC::Char* -> LibC::Bool)
-    fs_get_current_directory : (-> LibC::Char*)
+    fs_get_current_directory : ( -> LibC::Char*)
     fs_change_directory : (LibC::Char* -> LibC::Bool)
     fs_make_directory : (LibC::Char* -> LibC::Bool)
     fs_open_file : (FsEntry*, LibC::Char* -> File)
   end
-
   alias X__DarwinTimeT = LibC::Long
   alias TimeT = X__DarwinTimeT
   fun create_fs_entry = al_create_fs_entry(path : LibC::Char*) : FsEntry*
@@ -674,26 +654,21 @@ lib LibAllegro
   fun get_fs_interface = al_get_fs_interface : FsInterface*
   fun set_fs_interface = al_set_fs_interface(vtable : FsInterface*)
   fun set_standard_fs_interface = al_set_standard_fs_interface
-
   struct DisplayMode
     width : LibC::Int
     height : LibC::Int
     format : LibC::Int
     refresh_rate : LibC::Int
   end
-
   fun get_num_display_modes = al_get_num_display_modes : LibC::Int
   fun get_display_mode = al_get_display_mode(index : LibC::Int, mode : DisplayMode*) : DisplayMode*
-
   struct JoystickState
     stick : JoystickStateStick[16]
     button : LibC::Int[32]
   end
-
   struct JoystickStateStick
     axis : LibC::Float[3]
   end
-
   fun install_joystick = al_install_joystick : LibC::Bool
   fun uninstall_joystick = al_uninstall_joystick
   fun is_joystick_installed = al_is_joystick_installed : LibC::Bool
@@ -712,170 +687,168 @@ lib LibAllegro
   fun get_joystick_button_name = al_get_joystick_button_name(x0 : Joystick*, buttonn : LibC::Int) : LibC::Char*
   fun get_joystick_state = al_get_joystick_state(x0 : Joystick*, ret_state : JoystickState*)
   fun get_joystick_event_source = al_get_joystick_event_source : EventSource*
-  KeyA             =     1_i64
-  KeyB             =     2_i64
-  KeyC             =     3_i64
-  KeyD             =     4_i64
-  KeyE             =     5_i64
-  KeyF             =     6_i64
-  KeyG             =     7_i64
-  KeyH             =     8_i64
-  KeyI             =     9_i64
-  KeyJ             =    10_i64
-  KeyK             =    11_i64
-  KeyL             =    12_i64
-  KeyM             =    13_i64
-  KeyN             =    14_i64
-  KeyO             =    15_i64
-  KeyP             =    16_i64
-  KeyQ             =    17_i64
-  KeyR             =    18_i64
-  KeyS             =    19_i64
-  KeyT             =    20_i64
-  KeyU             =    21_i64
-  KeyV             =    22_i64
-  KeyW             =    23_i64
-  KeyX             =    24_i64
-  KeyY             =    25_i64
-  KeyZ             =    26_i64
-  Key0             =    27_i64
-  Key1             =    28_i64
-  Key2             =    29_i64
-  Key3             =    30_i64
-  Key4             =    31_i64
-  Key5             =    32_i64
-  Key6             =    33_i64
-  Key7             =    34_i64
-  Key8             =    35_i64
-  Key9             =    36_i64
-  KeyPad0          =    37_i64
-  KeyPad1          =    38_i64
-  KeyPad2          =    39_i64
-  KeyPad3          =    40_i64
-  KeyPad4          =    41_i64
-  KeyPad5          =    42_i64
-  KeyPad6          =    43_i64
-  KeyPad7          =    44_i64
-  KeyPad8          =    45_i64
-  KeyPad9          =    46_i64
-  KeyF1            =    47_i64
-  KeyF2            =    48_i64
-  KeyF3            =    49_i64
-  KeyF4            =    50_i64
-  KeyF5            =    51_i64
-  KeyF6            =    52_i64
-  KeyF7            =    53_i64
-  KeyF8            =    54_i64
-  KeyF9            =    55_i64
-  KeyF10           =    56_i64
-  KeyF11           =    57_i64
-  KeyF12           =    58_i64
-  KeyEscape        =    59_i64
-  KeyTilde         =    60_i64
-  KeyMinus         =    61_i64
-  KeyEquals        =    62_i64
-  KeyBackspace     =    63_i64
-  KeyTab           =    64_i64
-  KeyOpenbrace     =    65_i64
-  KeyClosebrace    =    66_i64
-  KeyEnter         =    67_i64
-  KeySemicolon     =    68_i64
-  KeyQuote         =    69_i64
-  KeyBackslash     =    70_i64
-  KeyBackslash2    =    71_i64
-  KeyComma         =    72_i64
-  KeyFullstop      =    73_i64
-  KeySlash         =    74_i64
-  KeySpace         =    75_i64
-  KeyInsert        =    76_i64
-  KeyDelete        =    77_i64
-  KeyHome          =    78_i64
-  KeyEnd           =    79_i64
-  KeyPgup          =    80_i64
-  KeyPgdn          =    81_i64
-  KeyLeft          =    82_i64
-  KeyRight         =    83_i64
-  KeyUp            =    84_i64
-  KeyDown          =    85_i64
-  KeyPadSlash      =    86_i64
-  KeyPadAsterisk   =    87_i64
-  KeyPadMinus      =    88_i64
-  KeyPadPlus       =    89_i64
-  KeyPadDelete     =    90_i64
-  KeyPadEnter      =    91_i64
-  KeyPrintscreen   =    92_i64
-  KeyPause         =    93_i64
-  KeyAbntC1        =    94_i64
-  KeyYen           =    95_i64
-  KeyKana          =    96_i64
-  KeyConvert       =    97_i64
-  KeyNoconvert     =    98_i64
-  KeyAt            =    99_i64
-  KeyCircumflex    =   100_i64
-  KeyColon2        =   101_i64
-  KeyKanji         =   102_i64
-  KeyPadEquals     =   103_i64
-  KeyBackquote     =   104_i64
-  KeySemicolon2    =   105_i64
-  KeyCommand       =   106_i64
-  KeyBack          =   107_i64
-  KeyVolumeUp      =   108_i64
-  KeyVolumeDown    =   109_i64
-  KeySearch        =   110_i64
-  KeyDpadCenter    =   111_i64
-  KeyButtonX       =   112_i64
-  KeyButtonY       =   113_i64
-  KeyDpadUp        =   114_i64
-  KeyDpadDown      =   115_i64
-  KeyDpadLeft      =   116_i64
-  KeyDpadRight     =   117_i64
-  KeySelect        =   118_i64
-  KeyStart         =   119_i64
-  KeyButtonL1      =   120_i64
-  KeyButtonR1      =   121_i64
-  KeyButtonL2      =   122_i64
-  KeyButtonR2      =   123_i64
-  KeyButtonA       =   124_i64
-  KeyButtonB       =   125_i64
-  KeyThumbl        =   126_i64
-  KeyThumbr        =   127_i64
-  KeyUnknown       =   128_i64
-  KeyModifiers     =   215_i64
-  KeyLshift        =   215_i64
-  KeyRshift        =   216_i64
-  KeyLctrl         =   217_i64
-  KeyRctrl         =   218_i64
-  KeyAlt           =   219_i64
-  KeyAltgr         =   220_i64
-  KeyLwin          =   221_i64
-  KeyRwin          =   222_i64
-  KeyMenu          =   223_i64
-  KeyScrolllock    =   224_i64
-  KeyNumlock       =   225_i64
-  KeyCapslock      =   226_i64
-  KeyMax           =   227_i64
-  KeymodShift      =     1_i64
-  KeymodCtrl       =     2_i64
-  KeymodAlt        =     4_i64
-  KeymodLwin       =     8_i64
-  KeymodRwin       =    16_i64
-  KeymodMenu       =    32_i64
-  KeymodAltgr      =    64_i64
-  KeymodCommand    =   128_i64
-  KeymodScrolllock =   256_i64
-  KeymodNumlock    =   512_i64
-  KeymodCapslock   =  1024_i64
-  KeymodInaltseq   =  2048_i64
-  KeymodAccent1    =  4096_i64
-  KeymodAccent2    =  8192_i64
-  KeymodAccent3    = 16384_i64
-  KeymodAccent4    = 32768_i64
-
+  KeyA = 1_i64
+  KeyB = 2_i64
+  KeyC = 3_i64
+  KeyD = 4_i64
+  KeyE = 5_i64
+  KeyF = 6_i64
+  KeyG = 7_i64
+  KeyH = 8_i64
+  KeyI = 9_i64
+  KeyJ = 10_i64
+  KeyK = 11_i64
+  KeyL = 12_i64
+  KeyM = 13_i64
+  KeyN = 14_i64
+  KeyO = 15_i64
+  KeyP = 16_i64
+  KeyQ = 17_i64
+  KeyR = 18_i64
+  KeyS = 19_i64
+  KeyT = 20_i64
+  KeyU = 21_i64
+  KeyV = 22_i64
+  KeyW = 23_i64
+  KeyX = 24_i64
+  KeyY = 25_i64
+  KeyZ = 26_i64
+  Key0 = 27_i64
+  Key1 = 28_i64
+  Key2 = 29_i64
+  Key3 = 30_i64
+  Key4 = 31_i64
+  Key5 = 32_i64
+  Key6 = 33_i64
+  Key7 = 34_i64
+  Key8 = 35_i64
+  Key9 = 36_i64
+  KeyPad0 = 37_i64
+  KeyPad1 = 38_i64
+  KeyPad2 = 39_i64
+  KeyPad3 = 40_i64
+  KeyPad4 = 41_i64
+  KeyPad5 = 42_i64
+  KeyPad6 = 43_i64
+  KeyPad7 = 44_i64
+  KeyPad8 = 45_i64
+  KeyPad9 = 46_i64
+  KeyF1 = 47_i64
+  KeyF2 = 48_i64
+  KeyF3 = 49_i64
+  KeyF4 = 50_i64
+  KeyF5 = 51_i64
+  KeyF6 = 52_i64
+  KeyF7 = 53_i64
+  KeyF8 = 54_i64
+  KeyF9 = 55_i64
+  KeyF10 = 56_i64
+  KeyF11 = 57_i64
+  KeyF12 = 58_i64
+  KeyEscape = 59_i64
+  KeyTilde = 60_i64
+  KeyMinus = 61_i64
+  KeyEquals = 62_i64
+  KeyBackspace = 63_i64
+  KeyTab = 64_i64
+  KeyOpenbrace = 65_i64
+  KeyClosebrace = 66_i64
+  KeyEnter = 67_i64
+  KeySemicolon = 68_i64
+  KeyQuote = 69_i64
+  KeyBackslash = 70_i64
+  KeyBackslash2 = 71_i64
+  KeyComma = 72_i64
+  KeyFullstop = 73_i64
+  KeySlash = 74_i64
+  KeySpace = 75_i64
+  KeyInsert = 76_i64
+  KeyDelete = 77_i64
+  KeyHome = 78_i64
+  KeyEnd = 79_i64
+  KeyPgup = 80_i64
+  KeyPgdn = 81_i64
+  KeyLeft = 82_i64
+  KeyRight = 83_i64
+  KeyUp = 84_i64
+  KeyDown = 85_i64
+  KeyPadSlash = 86_i64
+  KeyPadAsterisk = 87_i64
+  KeyPadMinus = 88_i64
+  KeyPadPlus = 89_i64
+  KeyPadDelete = 90_i64
+  KeyPadEnter = 91_i64
+  KeyPrintscreen = 92_i64
+  KeyPause = 93_i64
+  KeyAbntC1 = 94_i64
+  KeyYen = 95_i64
+  KeyKana = 96_i64
+  KeyConvert = 97_i64
+  KeyNoconvert = 98_i64
+  KeyAt = 99_i64
+  KeyCircumflex = 100_i64
+  KeyColon2 = 101_i64
+  KeyKanji = 102_i64
+  KeyPadEquals = 103_i64
+  KeyBackquote = 104_i64
+  KeySemicolon2 = 105_i64
+  KeyCommand = 106_i64
+  KeyBack = 107_i64
+  KeyVolumeUp = 108_i64
+  KeyVolumeDown = 109_i64
+  KeySearch = 110_i64
+  KeyDpadCenter = 111_i64
+  KeyButtonX = 112_i64
+  KeyButtonY = 113_i64
+  KeyDpadUp = 114_i64
+  KeyDpadDown = 115_i64
+  KeyDpadLeft = 116_i64
+  KeyDpadRight = 117_i64
+  KeySelect = 118_i64
+  KeyStart = 119_i64
+  KeyButtonL1 = 120_i64
+  KeyButtonR1 = 121_i64
+  KeyButtonL2 = 122_i64
+  KeyButtonR2 = 123_i64
+  KeyButtonA = 124_i64
+  KeyButtonB = 125_i64
+  KeyThumbl = 126_i64
+  KeyThumbr = 127_i64
+  KeyUnknown = 128_i64
+  KeyModifiers = 215_i64
+  KeyLshift = 215_i64
+  KeyRshift = 216_i64
+  KeyLctrl = 217_i64
+  KeyRctrl = 218_i64
+  KeyAlt = 219_i64
+  KeyAltgr = 220_i64
+  KeyLwin = 221_i64
+  KeyRwin = 222_i64
+  KeyMenu = 223_i64
+  KeyScrolllock = 224_i64
+  KeyNumlock = 225_i64
+  KeyCapslock = 226_i64
+  KeyMax = 227_i64
+  KeymodShift = 1_i64
+  KeymodCtrl = 2_i64
+  KeymodAlt = 4_i64
+  KeymodLwin = 8_i64
+  KeymodRwin = 16_i64
+  KeymodMenu = 32_i64
+  KeymodAltgr = 64_i64
+  KeymodCommand = 128_i64
+  KeymodScrolllock = 256_i64
+  KeymodNumlock = 512_i64
+  KeymodCapslock = 1024_i64
+  KeymodInaltseq = 2048_i64
+  KeymodAccent1 = 4096_i64
+  KeymodAccent2 = 8192_i64
+  KeymodAccent3 = 16384_i64
+  KeymodAccent4 = 32768_i64
   struct KeyboardState
     display : Void*
     __key_down__internal__ : LibC::UInt[8]
   end
-
   fun is_keyboard_installed = al_is_keyboard_installed : LibC::Bool
   fun install_keyboard = al_install_keyboard : LibC::Bool
   fun uninstall_keyboard = al_uninstall_keyboard
@@ -884,7 +857,6 @@ lib LibAllegro
   fun get_keyboard_state = al_get_keyboard_state(ret_state : KeyboardState*)
   fun key_down = al_key_down(x0 : KeyboardState*, keycode : LibC::Int) : LibC::Bool
   fun get_keyboard_event_source = al_get_keyboard_event_source : EventSource*
-
   struct MouseState
     x : LibC::Int
     y : LibC::Int
@@ -895,7 +867,6 @@ lib LibAllegro
     pressure : LibC::Float
     display : Void*
   end
-
   fun is_mouse_installed = al_is_mouse_installed : LibC::Bool
   fun install_mouse = al_install_mouse : LibC::Bool
   fun uninstall_mouse = al_uninstall_mouse
@@ -914,11 +885,9 @@ lib LibAllegro
   fun set_mouse_wheel_precision = al_set_mouse_wheel_precision(precision : LibC::Int)
   fun get_mouse_wheel_precision = al_get_mouse_wheel_precision : LibC::Int
   fun get_mouse_event_source = al_get_mouse_event_source : EventSource*
-
   struct TouchInputState
     touches : TouchState[16]
   end
-
   struct TouchState
     id : LibC::Int
     x : LibC::Float
@@ -928,80 +897,74 @@ lib LibAllegro
     primary : LibC::Bool
     display : Void*
   end
-
   fun is_touch_input_installed = al_is_touch_input_installed : LibC::Bool
   fun install_touch_input = al_install_touch_input : LibC::Bool
   fun uninstall_touch_input = al_uninstall_touch_input
   fun get_touch_input_state = al_get_touch_input_state(ret_state : TouchInputState*)
   fun get_touch_input_event_source = al_get_touch_input_event_source : EventSource*
-
   struct MemoryInterface
     mi_malloc : (LibC::SizeT, LibC::Int, LibC::Char*, LibC::Char* -> Void*)
     mi_free : (Void*, LibC::Int, LibC::Char*, LibC::Char* -> Void)
     mi_realloc : (Void*, LibC::SizeT, LibC::Int, LibC::Char*, LibC::Char* -> Void*)
     mi_calloc : (LibC::SizeT, LibC::SizeT, LibC::Int, LibC::Char*, LibC::Char* -> Void*)
   end
-
   fun set_memory_interface = al_set_memory_interface(iface : MemoryInterface*)
   fun malloc_with_context = al_malloc_with_context(n : LibC::SizeT, line : LibC::Int, file : LibC::Char*, func : LibC::Char*) : Void*
   fun free_with_context = al_free_with_context(ptr : Void*, line : LibC::Int, file : LibC::Char*, func : LibC::Char*)
   fun realloc_with_context = al_realloc_with_context(ptr : Void*, n : LibC::SizeT, line : LibC::Int, file : LibC::Char*, func : LibC::Char*) : Void*
   fun calloc_with_context = al_calloc_with_context(count : LibC::SizeT, n : LibC::SizeT, line : LibC::Int, file : LibC::Char*, func : LibC::Char*) : Void*
-
   struct MonitorInfo
     x1 : LibC::Int
     y1 : LibC::Int
     x2 : LibC::Int
     y2 : LibC::Int
   end
-
   DefaultDisplayAdapter = -1_i64
   fun get_num_video_adapters = al_get_num_video_adapters : LibC::Int
   fun get_monitor_info = al_get_monitor_info(adapter : LibC::Int, info : MonitorInfo*) : LibC::Bool
+  fun get_monitor_dpi = al_get_monitor_dpi(adapter : LibC::Int) : LibC::Int
   fun create_mouse_cursor = al_create_mouse_cursor(sprite : Bitmap*, xfocus : LibC::Int, yfocus : LibC::Int) : MouseCursor
   type MouseCursor = Void*
   fun destroy_mouse_cursor = al_destroy_mouse_cursor(x0 : MouseCursor)
   fun set_mouse_cursor = al_set_mouse_cursor(display : Display*, cursor : MouseCursor) : LibC::Bool
   fun set_system_mouse_cursor = al_set_system_mouse_cursor(display : Display*, cursor_id : SystemMouseCursor) : LibC::Bool
   enum SystemMouseCursor
-    SystemMouseCursorNone        =  0
-    SystemMouseCursorDefault     =  1
-    SystemMouseCursorArrow       =  2
-    SystemMouseCursorBusy        =  3
-    SystemMouseCursorQuestion    =  4
-    SystemMouseCursorEdit        =  5
-    SystemMouseCursorMove        =  6
-    SystemMouseCursorResizeN     =  7
-    SystemMouseCursorResizeW     =  8
-    SystemMouseCursorResizeS     =  9
-    SystemMouseCursorResizeE     = 10
-    SystemMouseCursorResizeNw    = 11
-    SystemMouseCursorResizeSw    = 12
-    SystemMouseCursorResizeSe    = 13
-    SystemMouseCursorResizeNe    = 14
-    SystemMouseCursorProgress    = 15
-    SystemMouseCursorPrecision   = 16
-    SystemMouseCursorLink        = 17
-    SystemMouseCursorAltSelect   = 18
+    SystemMouseCursorNone = 0
+    SystemMouseCursorDefault = 1
+    SystemMouseCursorArrow = 2
+    SystemMouseCursorBusy = 3
+    SystemMouseCursorQuestion = 4
+    SystemMouseCursorEdit = 5
+    SystemMouseCursorMove = 6
+    SystemMouseCursorResizeN = 7
+    SystemMouseCursorResizeW = 8
+    SystemMouseCursorResizeS = 9
+    SystemMouseCursorResizeE = 10
+    SystemMouseCursorResizeNw = 11
+    SystemMouseCursorResizeSw = 12
+    SystemMouseCursorResizeSe = 13
+    SystemMouseCursorResizeNe = 14
+    SystemMouseCursorProgress = 15
+    SystemMouseCursorPrecision = 16
+    SystemMouseCursorLink = 17
+    SystemMouseCursorAltSelect = 18
     SystemMouseCursorUnavailable = 19
-    NumSystemMouseCursors        = 20
+    NumSystemMouseCursors = 20
   end
   fun show_mouse_cursor = al_show_mouse_cursor(display : Display*) : LibC::Bool
   fun hide_mouse_cursor = al_hide_mouse_cursor(display : Display*) : LibC::Bool
   fun set_render_state = al_set_render_state(state : RenderState, value : LibC::Int)
   enum RenderState
-    AlphaTest      = 16
-    WriteMask      = 17
-    DepthTest      = 18
-    DepthFunction  = 19
-    AlphaFunction  = 20
+    AlphaTest = 16
+    WriteMask = 17
+    DepthTest = 18
+    DepthFunction = 19
+    AlphaFunction = 20
     AlphaTestValue = 21
   end
-
   struct Transform
     m : LibC::Float[4][4]
   end
-
   fun use_transform = al_use_transform(trans : Transform*)
   fun use_projection_transform = al_use_projection_transform(trans : Transform*)
   fun copy_transform = al_copy_transform(dest : Transform*, src : Transform*)
@@ -1023,6 +986,7 @@ lib LibAllegro
   fun get_current_inverse_transform = al_get_current_inverse_transform : Transform*
   fun get_current_projection_transform = al_get_current_projection_transform : Transform*
   fun invert_transform = al_invert_transform(trans : Transform*)
+  fun transpose_transform = al_transpose_transform(trans : Transform*)
   fun check_inverse = al_check_inverse(trans : Transform*, tol : LibC::Float) : LibC::Int
   fun orthographic_transform = al_orthographic_transform(trans : Transform*, left : LibC::Float, top : LibC::Float, n : LibC::Float, right : LibC::Float, bottom : LibC::Float, f : LibC::Float)
   fun perspective_transform = al_perspective_transform(trans : Transform*, left : LibC::Float, top : LibC::Float, n : LibC::Float, right : LibC::Float, bottom : LibC::Float, f : LibC::Float)
@@ -1033,12 +997,16 @@ lib LibAllegro
     ShaderAuto = 0
     ShaderGlsl = 1
     ShaderHlsl = 2
+    ShaderAutoMinimal = 3
+    ShaderGlslMinimal = 4
+    ShaderHlslMinimal = 5
+    ShaderHlslSm30 = 6
   end
   type Shader = Void*
   fun attach_shader_source = al_attach_shader_source(shader : Shader, type : ShaderType, source : LibC::Char*) : LibC::Bool
   enum ShaderType
     VertexShader = 1
-    PixelShader  = 2
+    PixelShader = 2
   end
   fun attach_shader_source_file = al_attach_shader_source_file(shader : Shader, type : ShaderType, filename : LibC::Char*) : LibC::Bool
   fun build_shader = al_build_shader(shader : Shader) : LibC::Bool
@@ -1054,20 +1022,32 @@ lib LibAllegro
   fun set_shader_float_vector = al_set_shader_float_vector(name : LibC::Char*, num_components : LibC::Int, f : LibC::Float*, num_elems : LibC::Int) : LibC::Bool
   fun set_shader_bool = al_set_shader_bool(name : LibC::Char*, b : LibC::Bool) : LibC::Bool
   fun get_default_shader_source = al_get_default_shader_source(platform : ShaderPlatform, type : ShaderType) : LibC::Char*
-  fun install_system = al_install_system(version : LibC::Int, atexit_ptr : ((-> Void) -> LibC::Int)) : LibC::Bool
+  fun install_system = al_install_system(version : LibC::Int, atexit_ptr : (( -> Void) -> LibC::Int)) : LibC::Bool
   fun uninstall_system = al_uninstall_system
   fun is_system_installed = al_is_system_installed : LibC::Bool
   fun get_system_driver = al_get_system_driver : System
   type System = Void*
   fun get_system_config = al_get_system_config : Config
-  ResourcesPath     = 0_i64
-  TempPath          = 1_i64
-  UserDataPath      = 2_i64
-  UserHomePath      = 3_i64
-  UserSettingsPath  = 4_i64
+  fun get_system_id = al_get_system_id : SystemId
+  enum SystemId
+    SystemIdUnknown = 0
+    SystemIdXglx = 1481067608
+    SystemIdWindows = 1464421956
+    SystemIdMacosx = 1330862112
+    SystemIdAndroid = 1095648338
+    SystemIdIphone = 1229998159
+    SystemIdGp2Xwiz = 1464424992
+    SystemIdRaspberrypi = 1380012880
+    SystemIdSdl = 1396984882
+  end
+  ResourcesPath = 0_i64
+  TempPath = 1_i64
+  UserDataPath = 2_i64
+  UserHomePath = 3_i64
+  UserSettingsPath = 4_i64
   UserDocumentsPath = 5_i64
-  ExenamePath       = 6_i64
-  LastPath          = 7_i64
+  ExenamePath = 6_i64
+  LastPath = 7_i64
   fun get_standard_path = al_get_standard_path(id : LibC::Int) : Path
   fun set_exe_name = al_set_exe_name(path : LibC::Char*)
   fun set_org_name = al_set_org_name(org_name : LibC::Char*)
@@ -1108,38 +1088,34 @@ lib LibAllegro
   fun set_timer_count = al_set_timer_count(timer : Timer*, count : Int64T)
   fun add_timer_count = al_add_timer_count(timer : Timer*, diff : Int64T)
   fun get_timer_event_source = al_get_timer_event_source(timer : Timer*) : EventSource*
-
   struct State
     _tls : LibC::Char[1024]
   end
-
   fun store_state = al_store_state(state : State*, flags : LibC::Int)
   fun restore_state = al_restore_state(state : State*)
   fun _osx_get_path = _al_osx_get_path(id : LibC::Int) : Path
-
   struct SampleId
     _index : LibC::Int
     _id : LibC::Int
   end
-
   fun create_sample = al_create_sample(buf : Void*, samples : LibC::UInt, freq : LibC::UInt, depth : AudioDepth, chan_conf : ChannelConf, free_buf : LibC::Bool) : Sample
   enum AudioDepth
-    AudioDepthInt8     =  0
-    AudioDepthInt16    =  1
-    AudioDepthInt24    =  2
-    AudioDepthFloat32  =  3
-    AudioDepthUnsigned =  8
-    AudioDepthUint8    =  8
-    AudioDepthUint16   =  9
-    AudioDepthUint24   = 10
+    AudioDepthInt8 = 0
+    AudioDepthInt16 = 1
+    AudioDepthInt24 = 2
+    AudioDepthFloat32 = 3
+    AudioDepthUnsigned = 8
+    AudioDepthUint8 = 8
+    AudioDepthUint16 = 9
+    AudioDepthUint24 = 10
   end
   enum ChannelConf
-    ChannelConf1  =  16
-    ChannelConf2  =  32
-    ChannelConf3  =  48
-    ChannelConf4  =  64
-    ChannelConf51 =  81
-    ChannelConf61 =  97
+    ChannelConf1 = 16
+    ChannelConf2 = 32
+    ChannelConf3 = 48
+    ChannelConf4 = 64
+    ChannelConf51 = 81
+    ChannelConf61 = 97
     ChannelConf71 = 113
   end
   type Sample = Void*
@@ -1163,11 +1139,13 @@ lib LibAllegro
   fun get_sample_instance_channels = al_get_sample_instance_channels(spl : SampleInstance) : ChannelConf
   fun get_sample_instance_playmode = al_get_sample_instance_playmode(spl : SampleInstance) : Playmode
   enum Playmode
-    PlaymodeOnce           = 256
-    PlaymodeLoop           = 257
-    PlaymodeBidir          = 258
-    X_PlaymodeStreamOnce   = 259
+    PlaymodeOnce = 256
+    PlaymodeLoop = 257
+    PlaymodeBidir = 258
+    X_PlaymodeStreamOnce = 259
     X_PlaymodeStreamOnedir = 260
+    PlaymodeLoopOnce = 261
+    X_PlaymodeStreamLoopOnce = 262
   end
   fun get_sample_instance_playing = al_get_sample_instance_playing(spl : SampleInstance) : LibC::Bool
   fun get_sample_instance_attached = al_get_sample_instance_attached(spl : SampleInstance) : LibC::Bool
@@ -1200,7 +1178,6 @@ lib LibAllegro
   fun get_audio_stream_playing = al_get_audio_stream_playing(spl : AudioStream) : LibC::Bool
   fun get_audio_stream_attached = al_get_audio_stream_attached(spl : AudioStream) : LibC::Bool
   fun get_audio_stream_played_samples = al_get_audio_stream_played_samples(stream : AudioStream) : Uint64T
-  alias Uint64T = LibC::ULongLong
   fun get_audio_stream_fragment = al_get_audio_stream_fragment(stream : AudioStream) : Void*
   fun set_audio_stream_speed = al_set_audio_stream_speed(stream : AudioStream, val : LibC::Float) : LibC::Bool
   fun set_audio_stream_gain = al_set_audio_stream_gain(stream : AudioStream, val : LibC::Float) : LibC::Bool
@@ -1227,9 +1204,9 @@ lib LibAllegro
   fun get_mixer_depth = al_get_mixer_depth(mixer : Mixer) : AudioDepth
   fun get_mixer_quality = al_get_mixer_quality(mixer : Mixer) : MixerQuality
   enum MixerQuality
-    MixerQualityPoint  = 272
+    MixerQualityPoint = 272
     MixerQualityLinear = 273
-    MixerQualityCubic  = 274
+    MixerQualityCubic = 274
   end
   fun get_mixer_gain = al_get_mixer_gain(mixer : Mixer) : LibC::Float
   fun get_mixer_playing = al_get_mixer_playing(mixer : Mixer) : LibC::Bool
@@ -1260,6 +1237,10 @@ lib LibAllegro
   fun get_channel_count = al_get_channel_count(conf : ChannelConf) : LibC::SizeT
   fun get_audio_depth_size = al_get_audio_depth_size(conf : AudioDepth) : LibC::SizeT
   fun fill_silence = al_fill_silence(buf : Void*, samples : LibC::UInt, depth : AudioDepth, chan_conf : ChannelConf)
+  fun get_num_audio_output_devices = al_get_num_audio_output_devices : LibC::Int
+  fun get_audio_output_device = al_get_audio_output_device(index : LibC::Int) : AudioDevice
+  type AudioDevice = Void*
+  fun get_audio_device_name = al_get_audio_device_name(device : AudioDevice) : LibC::Char*
   fun reserve_samples = al_reserve_samples(reserve_samples : LibC::Int) : LibC::Bool
   fun get_default_mixer = al_get_default_mixer : Mixer
   fun set_default_mixer = al_set_default_mixer(mixer : Mixer) : LibC::Bool
@@ -1275,13 +1256,17 @@ lib LibAllegro
   fun register_sample_loader_f = al_register_sample_loader_f(ext : LibC::Char*, loader : (File -> Sample)) : LibC::Bool
   fun register_sample_saver_f = al_register_sample_saver_f(ext : LibC::Char*, saver : (File, Sample -> LibC::Bool)) : LibC::Bool
   fun register_audio_stream_loader_f = al_register_audio_stream_loader_f(ext : LibC::Char*, stream_loader : (File, LibC::SizeT, LibC::UInt -> AudioStream)) : LibC::Bool
+  fun register_sample_identifier = al_register_sample_identifier(ext : LibC::Char*, identifier : (File -> LibC::Bool)) : LibC::Bool
   fun load_sample = al_load_sample(filename : LibC::Char*) : Sample
   fun save_sample = al_save_sample(filename : LibC::Char*, spl : Sample) : LibC::Bool
   fun load_audio_stream = al_load_audio_stream(filename : LibC::Char*, buffer_count : LibC::SizeT, samples : LibC::UInt) : AudioStream
   fun load_sample_f = al_load_sample_f(fp : File, ident : LibC::Char*) : Sample
   fun save_sample_f = al_save_sample_f(fp : File, ident : LibC::Char*, spl : Sample) : LibC::Bool
   fun load_audio_stream_f = al_load_audio_stream_f(fp : File, ident : LibC::Char*, buffer_count : LibC::SizeT, samples : LibC::UInt) : AudioStream
+  fun identify_sample_f = al_identify_sample_f(fp : File) : LibC::Char*
+  fun identify_sample = al_identify_sample(filename : LibC::Char*) : LibC::Char*
   fun init_acodec_addon = al_init_acodec_addon : LibC::Bool
+  fun is_acodec_addon_initialized = al_is_acodec_addon_initialized : LibC::Bool
   fun get_allegro_acodec_version = al_get_allegro_acodec_version : Uint32T
   fun get_allegro_color_version = al_get_allegro_color_version : Uint32T
   fun color_hsv_to_rgb = al_color_hsv_to_rgb(hue : LibC::Float, saturation : LibC::Float, value : LibC::Float, red : LibC::Float*, green : LibC::Float*, blue : LibC::Float*)
@@ -1316,15 +1301,22 @@ lib LibAllegro
   fun color_rgb_to_lch = al_color_rgb_to_lch(red : LibC::Float, green : LibC::Float, blue : LibC::Float, l : LibC::Float*, c : LibC::Float*, h : LibC::Float*)
   fun color_lch = al_color_lch(l : LibC::Float, c : LibC::Float, h : LibC::Float) : Color
   fun is_color_valid = al_is_color_valid(color : Color) : LibC::Bool
+  fun color_oklab_to_rgb = al_color_oklab_to_rgb(l : LibC::Float, a : LibC::Float, b : LibC::Float, red : LibC::Float*, green : LibC::Float*, blue : LibC::Float*)
+  fun color_rgb_to_oklab = al_color_rgb_to_oklab(red : LibC::Float, green : LibC::Float, blue : LibC::Float, l : LibC::Float*, a : LibC::Float*, b : LibC::Float*)
+  fun color_oklab = al_color_oklab(l : LibC::Float, a : LibC::Float, b : LibC::Float) : Color
+  fun color_linear_to_rgb = al_color_linear_to_rgb(x : LibC::Float, y : LibC::Float, z : LibC::Float, red : LibC::Float*, green : LibC::Float*, blue : LibC::Float*)
+  fun color_rgb_to_linear = al_color_rgb_to_linear(red : LibC::Float, green : LibC::Float, blue : LibC::Float, x : LibC::Float*, y : LibC::Float*, z : LibC::Float*)
+  fun color_linear = al_color_linear(r : LibC::Float, g : LibC::Float, b : LibC::Float) : Color
   fun init_image_addon = al_init_image_addon : LibC::Bool
+  fun is_image_addon_initialized = al_is_image_addon_initialized : LibC::Bool
   fun shutdown_image_addon = al_shutdown_image_addon
   fun get_allegro_image_version = al_get_allegro_image_version : Uint32T
-  NoKerning    = -1_i64
-  AlignLeft    =  0_i64
-  AlignCentre  =  1_i64
-  AlignCenter  =  1_i64
-  AlignRight   =  2_i64
-  AlignInteger =  4_i64
+  NoKerning = -1_i64
+  AlignLeft = 0_i64
+  AlignCentre = 1_i64
+  AlignCenter = 1_i64
+  AlignRight = 2_i64
+  AlignInteger = 4_i64
   fun register_font_loader = al_register_font_loader(ext : LibC::Char*, load : (LibC::Char*, LibC::Int, LibC::Int -> Font)) : LibC::Bool
   type Font = Void*
   fun load_bitmap_font = al_load_bitmap_font(filename : LibC::Char*) : Font
@@ -1347,6 +1339,7 @@ lib LibAllegro
   fun get_ustr_dimensions = al_get_ustr_dimensions(f : Font, text : Ustr*, bbx : LibC::Int*, bby : LibC::Int*, bbw : LibC::Int*, bbh : LibC::Int*)
   fun get_text_dimensions = al_get_text_dimensions(f : Font, text : LibC::Char*, bbx : LibC::Int*, bby : LibC::Int*, bbw : LibC::Int*, bbh : LibC::Int*)
   fun init_font_addon = al_init_font_addon : LibC::Bool
+  fun is_font_addon_initialized = al_is_font_addon_initialized : LibC::Bool
   fun shutdown_font_addon = al_shutdown_font_addon
   fun get_allegro_font_version = al_get_allegro_font_version : Uint32T
   fun get_font_ranges = al_get_font_ranges(font : Font, ranges_count : LibC::Int, ranges : LibC::Int*) : LibC::Int
@@ -1361,15 +1354,22 @@ lib LibAllegro
   fun do_multiline_ustr = al_do_multiline_ustr(font : Font, max_width : LibC::Float, ustr : Ustr*, cb : (LibC::Int, Ustr*, Void* -> LibC::Bool), extra : Void*)
   fun set_fallback_font = al_set_fallback_font(font : Font, fallback : Font)
   fun get_fallback_font = al_get_fallback_font(font : Font) : Font
-
+  fun load_ttf_font = al_load_ttf_font(filename : LibC::Char*, size : LibC::Int, flags : LibC::Int) : Font
+  fun load_ttf_font_f = al_load_ttf_font_f(file : File, filename : LibC::Char*, size : LibC::Int, flags : LibC::Int) : Font
+  fun load_ttf_font_stretch = al_load_ttf_font_stretch(filename : LibC::Char*, w : LibC::Int, h : LibC::Int, flags : LibC::Int) : Font
+  fun load_ttf_font_stretch_f = al_load_ttf_font_stretch_f(file : File, filename : LibC::Char*, w : LibC::Int, h : LibC::Int, flags : LibC::Int) : Font
+  fun init_ttf_addon = al_init_ttf_addon : LibC::Bool
+  fun is_ttf_addon_initialized = al_is_ttf_addon_initialized : LibC::Bool
+  fun shutdown_ttf_addon = al_shutdown_ttf_addon
+  fun get_allegro_ttf_version = al_get_allegro_ttf_version : Uint32T
   struct MenuInfo
     caption : LibC::Char*
-    id : LibC::Int
+    id : Uint16T
     flags : LibC::Int
     icon : Bitmap
   end
-
   fun init_native_dialog_addon = al_init_native_dialog_addon : LibC::Bool
+  fun is_native_dialog_addon_initialized = al_is_native_dialog_addon_initialized : LibC::Bool
   fun shutdown_native_dialog_addon = al_shutdown_native_dialog_addon
   fun create_native_file_dialog = al_create_native_file_dialog(initial_path : LibC::Char*, title : LibC::Char*, patterns : LibC::Char*, mode : LibC::Int) : Filechooser
   type Filechooser = Void*
@@ -1387,8 +1387,8 @@ lib LibAllegro
   type Menu = Void*
   fun create_popup_menu = al_create_popup_menu : Menu
   fun build_menu = al_build_menu(info : MenuInfo*) : Menu
-  fun append_menu_item = al_append_menu_item(parent : Menu, title : LibC::Char*, id : LibC::Int, flags : LibC::Int, icon : Bitmap, submenu : Menu) : LibC::Int
-  fun insert_menu_item = al_insert_menu_item(parent : Menu, pos : LibC::Int, title : LibC::Char*, id : LibC::Int, flags : LibC::Int, icon : Bitmap, submenu : Menu) : LibC::Int
+  fun append_menu_item = al_append_menu_item(parent : Menu, title : LibC::Char*, id : Uint16T, flags : LibC::Int, icon : Bitmap, submenu : Menu) : LibC::Int
+  fun insert_menu_item = al_insert_menu_item(parent : Menu, pos : LibC::Int, title : LibC::Char*, id : Uint16T, flags : LibC::Int, icon : Bitmap, submenu : Menu) : LibC::Int
   fun remove_menu_item = al_remove_menu_item(menu : Menu, pos : LibC::Int) : LibC::Bool
   fun clone_menu = al_clone_menu(menu : Menu) : Menu
   fun clone_menu_for_popup = al_clone_menu_for_popup(menu : Menu) : Menu
@@ -1399,8 +1399,8 @@ lib LibAllegro
   fun set_menu_item_flags = al_set_menu_item_flags(menu : Menu, pos : LibC::Int, flags : LibC::Int)
   fun get_menu_item_icon = al_get_menu_item_icon(menu : Menu, pos : LibC::Int) : Bitmap
   fun set_menu_item_icon = al_set_menu_item_icon(menu : Menu, pos : LibC::Int, icon : Bitmap)
-  fun find_menu = al_find_menu(haystack : Menu, id : LibC::Int) : Menu
-  fun find_menu_item = al_find_menu_item(haystack : Menu, id : LibC::Int, menu : Menu*, index : LibC::Int*) : LibC::Bool
+  fun find_menu = al_find_menu(haystack : Menu, id : Uint16T) : Menu
+  fun find_menu_item = al_find_menu_item(haystack : Menu, id : Uint16T, menu : Menu*, index : LibC::Int*) : LibC::Bool
   fun get_default_menu_event_source = al_get_default_menu_event_source : EventSource*
   fun enable_menu_event_source = al_enable_menu_event_source(menu : Menu) : EventSource*
   fun disable_menu_event_source = al_disable_menu_event_source(menu : Menu)
@@ -1409,34 +1409,31 @@ lib LibAllegro
   fun popup_menu = al_popup_menu(popup : Menu, display : Display*) : LibC::Bool
   fun remove_display_menu = al_remove_display_menu(display : Display*) : Menu
   fun get_allegro_native_dialog_version = al_get_allegro_native_dialog_version : Uint32T
-  FilechooserFileMustExist =   1_i64
-  FilechooserSave          =   2_i64
-  FilechooserFolder        =   4_i64
-  FilechooserPictures      =   8_i64
-  FilechooserShowHidden    =  16_i64
-  FilechooserMultiple      =  32_i64
-  MessageboxWarn           =   1_i64
-  MessageboxError          =   2_i64
-  MessageboxOkCancel       =   4_i64
-  MessageboxYesNo          =   8_i64
-  MessageboxQuestion       =  16_i64
-  TextlogNoClose           =   1_i64
-  TextlogMonospace         =   2_i64
-  EventNativeDialogClose   = 600_i64
-  EventMenuClick           = 601_i64
-  MenuItemEnabled          =   0_i64
-  MenuItemCheckbox         =   1_i64
-  MenuItemChecked          =   2_i64
-  MenuItemDisabled         =   4_i64
-  PrimMaxUserAttr          =  10_i64
-
+  FilechooserFileMustExist = 1_i64
+  FilechooserSave = 2_i64
+  FilechooserFolder = 4_i64
+  FilechooserPictures = 8_i64
+  FilechooserShowHidden = 16_i64
+  FilechooserMultiple = 32_i64
+  MessageboxWarn = 1_i64
+  MessageboxError = 2_i64
+  MessageboxOkCancel = 4_i64
+  MessageboxYesNo = 8_i64
+  MessageboxQuestion = 16_i64
+  TextlogNoClose = 1_i64
+  TextlogMonospace = 2_i64
+  EventNativeDialogClose = 600_i64
+  EventMenuClick = 601_i64
+  MenuItemEnabled = 0_i64
+  MenuItemCheckbox = 1_i64
+  MenuItemChecked = 2_i64
+  MenuItemDisabled = 4_i64
+  PrimMaxUserAttr = 10_i64
   struct VertexElement
     attribute : LibC::Int
     storage : LibC::Int
     offset : LibC::Int
   end
-
-
   struct Vertex
     x : LibC::Float
     y : LibC::Float
@@ -1445,9 +1442,9 @@ lib LibAllegro
     v : LibC::Float
     color : Color
   end
-
   fun get_allegro_primitives_version = al_get_allegro_primitives_version : Uint32T
   fun init_primitives_addon = al_init_primitives_addon : LibC::Bool
+  fun is_primitives_addon_initialized = al_is_primitives_addon_initialized : LibC::Bool
   fun shutdown_primitives_addon = al_shutdown_primitives_addon
   fun draw_prim = al_draw_prim(vtxs : Void*, decl : VertexDecl, texture : Bitmap, start : LibC::Int, _end : LibC::Int, type : LibC::Int) : LibC::Int
   type VertexDecl = Void*

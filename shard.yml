@@ -1,13 +1,14 @@
 name: crystal_allegro
-version: 0.1.0
+version: 0.2.0
 
 authors:
   - Jason Frey <fryguy9@gmail.com>
+  - Matt Swieboda <mswieboda@users.noreply.github.com>
 
 description: |
   Crystal binding to the Allegro game programming library.
 
-crystal: 0.26.1
+crystal: 1.5.0
 
 license: MIT
 

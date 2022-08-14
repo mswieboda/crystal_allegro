@@ -12,7 +12,8 @@ CrystalAllegro is a Crystal binding to the [Allegro](http://liballeg.org/) game 
   ```yaml
   dependencies:
     crystal_allegro:
-      github: Fryguy/crystal_allegro
+      github: mswieboda/crystal_allegro
+      version: 0.2.0
   ```
 
 ## Usage
@@ -39,9 +40,11 @@ cd crystal_allegro
 crystal ../crystal_lib/src/main.cr -- generator/lib_allegro.cr > src/crystal_allegro/lib_allegro.cr
 ```
 
+or run `make` or `make generate` to do the above.
+
 ## Contributing
 
-1. Fork it ( https://github.com/Fryguy/crystal_allegro/fork )
+1. Fork it ( https://github.com/mswieboda/crystal_allegro/fork )
 2. Create your feature branch (git checkout -b my-new-feature)
 3. Commit your changes (git commit -am 'Add some feature')
 4. Push to the branch (git push origin my-new-feature)
